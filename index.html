@@ -36,14 +36,12 @@ table{width:100%;border-collapse:collapse;font-size:.83rem}th,td{text-align:left
 
 <section class="card">
 <h2>1. Input data pasien</h2>
-<div class="notice"><b>Disclaimer penelitian dan penggunaan klinis:</b> Aplikasi ini dikembangkan sebagai prototipe untuk membantu pencatatan, pengelolaan, dan peninjauan data dalam kegiatan akademik atau penelitian. Apabila digunakan untuk penelitian, pengguna bertanggung jawab memastikan adanya persetujuan etik bila diperlukan, izin penggunaan data, perlindungan kerahasiaan, serta kepatuhan terhadap peraturan dan protokol penelitian yang berlaku. Versi ini belum merupakan instrumen prediksi klinis yang tervalidasi, sehingga hasilnya tidak boleh dijadikan satu-satunya dasar diagnosis, penentuan waktu pemberian obat, atau perubahan terapi. Keputusan klinis harus tetap didasarkan pada penilaian tenaga kesehatan yang berwenang, pedoman klinis, dan bukti ilmiah yang relevan. Pengembang tidak menjamin kesesuaian aplikasi untuk setiap tujuan penelitian atau penggunaan klinis; validasi dan tanggung jawab atas penggunaan data serta interpretasi hasil berada pada pengguna.</div>
+<div class="notice"><b>Disclaimer penelitian dan penggunaan klinis:</b> Aplikasi ini dikembangkan sebagai prototipe untuk membantu pencatatan, pengelolaan, dan peninjauan data dalam kegiatan akademik atau penelitian. Apabila digunakan untuk penelitian, pengguna bertanggung jawab memastikan adanya persetujuan etik bila diperlukan, izin penggunaan data, perlindungan kerahasiaan, serta kepatuhan terhadap peraturan dan protokol penelitian yang berlaku. Fitur kesimpulan pagi/malam pada versi ini merupakan skrining eksploratif berbasis pola tekanan darah yang tercatat, bukan model prediksi klinis tervalidasi. Hasilnya tidak boleh dijadikan dasar tunggal untuk menentukan waktu pemberian obat, diagnosis, atau perubahan terapi. Keputusan klinis harus tetap didasarkan pada penilaian tenaga kesehatan yang berwenang, pedoman klinis, dan bukti ilmiah yang relevan. Pengembang tidak menjamin kesesuaian aplikasi untuk setiap tujuan penelitian atau penggunaan klinis; validasi dan tanggung jawab atas penggunaan data serta interpretasi hasil berada pada pengguna.</div>
 <form id="patientForm">
 <div class="grid two">
 <div><label for="pid">Kode pasien (hindari nama/identitas langsung)</label><input id="pid" required placeholder="Contoh: HT-001"></div>
 <div><label for="age">Usia (tahun)</label><input id="age" type="number" min="18" max="120" required></div>
 <div><label for="sex">Jenis kelamin</label><select id="sex"><option value="">Pilih</option><option>Laki-laki</option><option>Perempuan</option><option>Tidak dicatat</option></select></div>
-<div><label for="ckd">Status penyakit ginjal kronis</label><select id="ckd"><option value="Tidak diketahui">Tidak diketahui</option><option value="Tidak">Tidak</option><option value="Ya">Ya</option></select></div>
-<div><label for="egfr">eGFR (mL/menit/1,73 m²), bila tersedia</label><input id="egfr" type="number" min="0" max="200" step="0.1" placeholder="Opsional"></div>
 <div><label for="drug">Obat antihipertensi (nama/kelas)</label><input id="drug" placeholder="Contoh: amlodipin; dosis sesuai resep"></div>
 <div><label for="doseTime">Waktu pemberian saat ini</label><select id="doseTime"><option value="">Pilih</option><option>Pagi</option><option>Malam</option><option>Lebih dari satu waktu</option><option>Tidak diketahui</option></select></div>
 <div><label for="adherence">Kepatuhan yang dilaporkan</label><select id="adherence"><option value="">Pilih</option><option>Baik</option><option>Perlu dievaluasi</option><option>Tidak diketahui</option></select></div>
@@ -68,12 +66,18 @@ table{width:100%;border-collapse:collapse;font-size:.83rem}th,td{text-align:left
 </section>
 
 <section class="card">
-<h2>3. Data pasien tersimpan</h2>
+<h2>3. Kesimpulan awal pagi atau malam</h2>
+<div class="notice">Kesimpulan hanya ditampilkan bila terdapat minimal dua pengukuran pagi dan dua pengukuran malam untuk pasien yang sama. Sistem membandingkan rerata tekanan darah pagi dan malam secara deskriptif. Selisih kecil, data tidak seimbang, atau konteks pengukuran yang berbeda akan menghasilkan status “Belum cukup data/perlu evaluasi”. Ini bukan rekomendasi klinis untuk mengubah jadwal obat.</div>
+<div id="predictionList" class="empty">Tambahkan pengukuran pagi dan malam untuk melihat ringkasan eksploratif.</div>
+</section>
+
+<section class="card">
+<h2>4. Data pasien tersimpan</h2>
 <div id="patientList" class="empty">Belum ada data pasien.</div>
 </section>
 
 <section class="card">
-<h2>4. Laporan dan ekspor data</h2>
+<h2>5. Laporan dan ekspor data</h2>
 <p class="muted">Laporan merupakan ringkasan data yang dicatat, bukan rekomendasi perubahan terapi. Ekspor CSV dapat dibuka dengan Excel.</p>
 <div class="btnrow">
 <button class="primary" id="makeReport">Buat ringkasan laporan</button>
@@ -100,13 +104,29 @@ function render(){
  $("bpPatient").innerHTML='<option value="">Pilih kode pasien</option>'+db.patients.map(p=>`<option value="${esc(p.pid)}">${esc(p.pid)}</option>`).join("");
  $("patientList").innerHTML=db.patients.length?db.patients.map(p=>{
  const ms=db.measurements.filter(m=>m.pid===p.pid);
- return `<article class="patient"><h3>${esc(p.pid)} <span class="tag">${ms.length} pengukuran</span></h3><div class="muted">Usia: ${esc(p.age)} · JK: ${esc(p.sex||"Tidak dicatat")} · CKD: ${esc(p.ckd)}</div><div class="muted">Obat: ${esc(p.drug||"Belum dicatat")} · Waktu saat ini: ${esc(p.doseTime||"Belum dicatat")}</div><div class="btnrow"><button class="secondary" data-view="${esc(p.pid)}">Lihat ringkasan</button><button class="danger" data-delete="${esc(p.pid)}">Hapus data</button></div></article>`;
+ return `<article class="patient"><h3>${esc(p.pid)} <span class="tag">${ms.length} pengukuran</span></h3><div class="muted">Usia: ${esc(p.age)} · JK: ${esc(p.sex||"Tidak dicatat")}</div><div class="muted">Obat: ${esc(p.drug||"Belum dicatat")} · Waktu saat ini: ${esc(p.doseTime||"Belum dicatat")}</div><div class="btnrow"><button class="secondary" data-view="${esc(p.pid)}">Lihat ringkasan</button><button class="danger" data-delete="${esc(p.pid)}">Hapus data</button></div></article>`;
  }).join(""):'<div class="empty">Belum ada data pasien.</div>';
+ const predRows=db.patients.map(p=>{
+   const ms=db.measurements.filter(m=>m.pid===p.pid);
+   const morning=ms.filter(m=>m.period==="Pagi"), night=ms.filter(m=>m.period==="Malam");
+   const avg=(arr,k)=>arr.length?arr.reduce((s,m)=>s+m[k],0)/arr.length:null;
+   let conclusion="Belum cukup data/perlu evaluasi",detail="Diperlukan minimal 2 pengukuran pagi dan 2 pengukuran malam.";
+   if(morning.length>=2 && night.length>=2){
+     const msys=avg(morning,"sys"), mdia=avg(morning,"dia"), nsys=avg(night,"sys"), ndia=avg(night,"dia");
+     const diff=(msys+mdia)/2-(nsys+ndia)/2;
+     if(Math.abs(diff)<5){conclusion="Belum ada kecenderungan yang jelas";detail="Rerata pagi dan malam relatif berdekatan; evaluasi data dan konteks klinis diperlukan."}
+     else if(diff>=5){conclusion="Tekanan darah pagi relatif lebih tinggi";detail="Temuan deskriptif dapat dibahas dalam evaluasi klinis; bukan instruksi memilih pemberian pagi."}
+     else {conclusion="Tekanan darah malam relatif lebih tinggi";detail="Temuan deskriptif dapat dibahas dalam evaluasi klinis; bukan instruksi memilih pemberian malam."}
+     detail+=` Rerata pagi ${Math.round(msys)}/${Math.round(mdia)} mmHg (${morning.length} data); malam ${Math.round(nsys)}/${Math.round(ndia)} mmHg (${night.length} data).`;
+   }
+   return `<article class="patient"><h3>${esc(p.pid)}</h3><p><span class="tag">${esc(conclusion)}</span></p><p class="muted">${esc(detail)}</p></article>`;
+ }).join("");
+ $("predictionList").innerHTML=predRows||'<div class="empty">Belum ada data pasien.</div>';
  document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>patientReport(b.dataset.view));
  document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>{const id=b.dataset.delete;if(confirm("Hapus pasien "+id+" dan seluruh pengukurannya?")){db.patients=db.patients.filter(p=>p.pid!==id);db.measurements=db.measurements.filter(m=>m.pid!==id);save()}});
 }
 $("patientForm").addEventListener("submit",e=>{
- e.preventDefault();const p={pid:$("pid").value.trim(),age:$("age").value,sex:$("sex").value,ckd:$("ckd").value,egfr:$("egfr").value,drug:$("drug").value.trim(),doseTime:$("doseTime").value,adherence:$("adherence").value,createdAt:new Date().toISOString()};
+ e.preventDefault();const p={pid:$("pid").value.trim(),age:$("age").value,sex:$("sex").value,drug:$("drug").value.trim(),doseTime:$("doseTime").value,adherence:$("adherence").value,createdAt:new Date().toISOString()};
  if(db.patients.some(x=>x.pid.toLowerCase()===p.pid.toLowerCase())){alert("Kode pasien sudah ada. Gunakan kode berbeda atau hapus data lama.");return}
  db.patients.push(p);save();$("patientForm").reset();alert("Data pasien berhasil disimpan di perangkat ini.");
 });
@@ -121,7 +141,17 @@ function patientReport(pid){
  const p=db.patients.find(x=>x.pid===pid),ms=db.measurements.filter(m=>m.pid===pid).sort((a,b)=>a.datetime.localeCompare(b.datetime));
  if(!p)return;
  const avg=(key)=>ms.length?Math.round(ms.reduce((s,m)=>s+m[key],0)/ms.length):"—";
- $("reportArea").innerHTML=`<div class="patient"><h3>Ringkasan ${esc(pid)}</h3><p>Usia ${esc(p.age)} tahun · CKD: ${esc(p.ckd)} · eGFR: ${esc(p.egfr||"tidak tersedia")}</p><p>Jumlah pengukuran: ${ms.length}</p><p>Rerata dari data yang tercatat: ${avg("sys")}/${avg("dia")} mmHg</p>${ms.length?`<table><thead><tr><th>Waktu</th><th>Periode</th><th>TD</th><th>Keterangan</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${esc(m.datetime.replace("T"," "))}</td><td>${esc(m.period)}</td><td>${m.sys}/${m.dia}</td><td>${esc(m.context)}</td></tr>`).join("")}</tbody></table>`:""}<p class="muted">Ringkasan deskriptif. Tidak memprediksi waktu terapi dan tidak menggantikan penilaian klinis.</p></div>`;
+ const morning=ms.filter(m=>m.period==="Pagi"), night=ms.filter(m=>m.period==="Malam");
+ const mean=(arr,k)=>arr.length?arr.reduce((s,m)=>s+m[k],0)/arr.length:null;
+ let conclusion="Belum cukup data/perlu evaluasi";
+ if(morning.length>=2 && night.length>=2){
+   const morningMean=(mean(morning,"sys")+mean(morning,"dia"))/2;
+   const nightMean=(mean(night,"sys")+mean(night,"dia"))/2;
+   if(Math.abs(morningMean-nightMean)<5) conclusion="Belum ada kecenderungan yang jelas";
+   else if(morningMean>nightMean) conclusion="Tekanan darah pagi relatif lebih tinggi";
+   else conclusion="Tekanan darah malam relatif lebih tinggi";
+ }
+ $("reportArea").innerHTML=`<div class="patient"><h3>Ringkasan ${esc(pid)}</h3><p>Usia ${esc(p.age)} tahun · JK: ${esc(p.sex||"Tidak dicatat")}</p><p>Jumlah pengukuran: ${ms.length}</p><p>Rerata dari data yang tercatat: ${avg("sys")}/${avg("dia")} mmHg</p><p><b>Kesimpulan eksploratif:</b> ${esc(conclusion)}</p>${ms.length?`<table><thead><tr><th>Waktu</th><th>Periode</th><th>TD</th><th>Keterangan</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${esc(m.datetime.replace("T"," "))}</td><td>${esc(m.period)}</td><td>${m.sys}/${m.dia}</td><td>${esc(m.context)}</td></tr>`).join("")}</tbody></table>`:""}<p class="muted">Kesimpulan ini merangkum pola tekanan darah pagi dan malam, bukan menentukan waktu minum obat. Keputusan terapi memerlukan evaluasi klinis; fitur ini belum tervalidasi sebagai model prediksi.</p></div>`;
  $("reportArea").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("makeReport").onclick=()=>{
@@ -130,8 +160,8 @@ $("makeReport").onclick=()=>{
  $("reportArea").innerHTML=`<div class="patient"><h3>Laporan dibuat</h3><p>Tanggal: ${new Date(report.createdAt).toLocaleString("id-ID")}</p><p>Data pasien: ${report.patients} · Pengukuran: ${report.measurements}</p><p>${report.summary}</p></div>`;
 };
 $("csvBtn").onclick=()=>{
- const rows=[["Kode pasien","Usia","Jenis kelamin","CKD","eGFR","Obat","Waktu pemberian saat ini","Kepatuhan","Tanggal pengukuran","Periode","Sistolik","Diastolik","Keterangan"]];
- db.measurements.forEach(m=>{const p=db.patients.find(p=>p.pid===m.pid)||{};rows.push([m.pid,p.age,p.sex,p.ckd,p.egfr,p.drug,p.doseTime,p.adherence,m.datetime,m.period,m.sys,m.dia,m.context])});
+ const rows=[["Kode pasien","Usia","Jenis kelamin","Obat","Waktu pemberian saat ini","Kepatuhan","Tanggal pengukuran","Periode","Sistolik","Diastolik","Keterangan"]];
+ db.measurements.forEach(m=>{const p=db.patients.find(p=>p.pid===m.pid)||{};rows.push([m.pid,p.age,p.sex,p.drug,p.doseTime,p.adherence,m.datetime,m.period,m.sys,m.dia,m.context])});
  const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
  download(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),"chronotherapy-data.csv");
 };

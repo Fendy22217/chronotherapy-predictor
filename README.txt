@@ -21,3 +21,5 @@ apt. Fendy Prasetyawan, S.Farm., M.Farm.
 
 DISCLAIMER:
 Aplikasi ini dikembangkan sebagai prototipe untuk membantu pencatatan, pengelolaan, dan peninjauan data dalam kegiatan akademik atau penelitian. Apabila digunakan untuk penelitian, pengguna bertanggung jawab memastikan adanya persetujuan etik bila diperlukan, izin penggunaan data, perlindungan kerahasiaan, serta kepatuhan terhadap peraturan dan protokol penelitian yang berlaku. Versi ini belum merupakan instrumen prediksi klinis yang tervalidasi, sehingga hasilnya tidak boleh dijadikan satu-satunya dasar diagnosis, penentuan waktu pemberian obat, atau perubahan terapi. Keputusan klinis harus tetap didasarkan pada penilaian tenaga kesehatan yang berwenang, pedoman klinis, dan bukti ilmiah yang relevan. Validasi dan tanggung jawab atas penggunaan data serta interpretasi hasil berada pada pengguna.
+
+UPDATE VERSI: Kolom ginjal (CKD/eGFR) dihapus. Kesimpulan eksploratif pasien membandingkan rerata tekanan darah pagi dan malam bila tersedia minimal dua pengukuran untuk masing-masing periode. Fitur ini tidak menentukan jadwal minum obat dan belum tervalidasi secara klinis.
